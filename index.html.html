@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#fafaf8; --card:#fff; --text:#1a1a2e; --muted:#8e8e9a; --border:#efefef; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:40px 24px 60px; }
+
+  header { text-align:center; margin-bottom:36px; }
+  header .label { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  header h1 { font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:600; }
+  .header-stats { display:flex; justify-content:center; gap:12px; margin-top:16px; flex-wrap:wrap; }
+  .stat-pill { background:var(--card); border:1px solid var(--border); border-radius:40px; padding:9px 20px; display:flex; flex-direction:column; align-items:center; box-shadow:0 1px 8px rgba(0,0,0,.04); min-width:120px; }
+  .sp-label { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .sp-value { font-size:1.05rem; font-weight:500; margin-top:2px; }
+  .sp-value.green { color:#5ab583; } .sp-value.blue { color:#6a9fd8; } .sp-value.red { color:#e07070; }
+
+  /* Live status bar */
+  .status-bar { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; font-size:11px; color:var(--muted); }
+  .status-dot { width:7px; height:7px; border-radius:50%; background:#ccc; flex-shrink:0; transition:background .3s; }
+  .status-dot.loading { background:#f0b429; animation:pulse 1s infinite; }
+  .status-dot.live    { background:#5ab583; }
+  .status-dot.error   { background:#e07070; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .grid { display:grid; grid-template-columns:1.25fr 1fr; gap:20px; max-width:980px; margin:0 auto 28px; }
+  @media(max-width:680px){ .grid{ grid-template-columns:1fr; } }
+
+  .card { background:var(--card); border-radius:20px; border:1px solid var(--border); padding:26px 22px; box-shadow:0 2px 18px rgba(0,0,0,.04); animation:fadeUp .5s ease both; }
+  .card-title { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:18px; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .card:nth-child(1){animation-delay:.05s} .card:nth-child(2){animation-delay:.12s} .card:nth-child(3){animation-delay:.19s}
+
+  .donut-card { grid-row:span 2; display:flex; flex-direction:column; align-items:center; }
+  #donutSvg { width:100%; height:auto; overflow:visible; display:block; }
+
+  /* Skeleton shimmer */
+  .shimmer { background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size:200% 100%; animation:shimmer 1.2s infinite; border-radius:4px; display:inline-block; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  .holding { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); }
+  .holding:last-child { border-bottom:none; }
+  .holding-left { display:flex; align-items:center; gap:10px; }
+  .h-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+  .h-icon svg { width:34px; height:34px; }
+  .h-ticker { font-size:13px; font-weight:500; }
+  .h-meta { font-size:11px; color:var(--muted); margin-top:1px; }
+  .holding-right { text-align:right; }
+  .h-value { font-size:13px; font-weight:500; }
+  .h-gain { font-size:11px; margin-top:2px; }
+  .h-price { font-size:10px; color:var(--muted); margin-top:1px; }
+  .gain-pos{color:#5ab583} .gain-neg{color:#e07070}
+
+  .sector-item { margin-bottom:14px; }
+  .sector-item:last-child { margin-bottom:0; }
+  .sector-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
+  .sector-name { font-size:13px; font-weight:500; }
+  .sector-pct { font-size:12px; color:var(--muted); }
+  .sector-bar-bg { height:8px; border-radius:99px; background:#f0f0f0; overflow:hidden; }
+  .sector-bar-fill { height:100%; border-radius:99px; transform-origin:left; transition:width .6s cubic-bezier(.22,1,.36,1); }
+
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; }
+  .stat-cell { padding:13px 8px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); }
+  .stat-cell:nth-child(2n){ border-right:none; }
+  .stat-cell:nth-last-child(-n+2){ border-bottom:none; }
+  .sc-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+  .sc-value { font-size:15px; font-weight:500; }
+  .sc-value.green{color:#5ab583} .sc-value.red{color:#e07070}
+
+  .advisor-card { max-width:980px; margin:0 auto; background:var(--card); border-radius:20px; border:1px solid var(--border); padding:26px 28px; box-shadow:0 2px 18px rgba(0,0,0,.04); display:flex; gap:18px; animation:fadeUp .5s .35s ease both; }
+  .advisor-icon { flex-shrink:0; width:42px; height:42px; border-radius:13px; background:#eef3fb; display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .advisor-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .advisor-text { font-size:14px; line-height:1.78; color:#3a3a4a; font-weight:300; }
+
+  .refresh-btn { background:none; border:1px solid var(--border); border-radius:20px; padding:5px 14px; font-size:11px; font-family:'DM Sans',sans-serif; color:var(--muted); cursor:pointer; transition:all .2s; margin-left:8px; }
+  .refresh-btn:hover { border-color:#aaa; color:var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="label">Portfolio Overview</p>
+  <h1>My Holdings</h1>
+  <div class="header-stats">
+    <div class="stat-pill"><span class="sp-label">Account Balance</span><span class="sp-value" id="pill-total">—</span></div>
+    <div class="stat-pill"><span class="sp-label">Market Value</span><span class="sp-value" id="pill-market">—</span></div>
+    <div class="stat-pill"><span class="sp-label">Cash Balance</span><span class="sp-value blue">$8,471.83</span></div>
+    <div class="stat-pill"><span class="sp-label">Total Return</span><span class="sp-value" id="pill-return">—</span></div>
+    <div class="stat-pill"><span class="sp-label">Today's P&L</span><span class="sp-value" id="pill-today">—</span></div>
+  </div>
+  <div class="status-bar">
+    <div class="status-dot loading" id="statusDot"></div>
+    <span id="statusText">Fetching live prices…</span>
+    <button class="refresh-btn" onclick="fetchPrices()">↻ Refresh</button>
+  </div>
+</header>
+
+<div class="grid">
+  <div class="card donut-card">
+    <p class="card-title">Allocation by Stock (incl. Cash)</p>
+    <svg id="donutSvg" viewBox="-110 -90 620 580"></svg>
+  </div>
+  <div class="card"><p class="card-title">Holdings</p><div id="holdingsList"></div></div>
+  <div class="card"><p class="card-title">By Sector</p><div id="sectorList"></div></div>
+</div>
+
+<div style="max-width:980px;margin:0 auto 28px;">
+  <div class="card" style="animation-delay:.28s;">
+    <p class="card-title">Account Breakdown</p>
+    <div class="stats-grid">
+      <div class="stat-cell"><div class="sc-label">Net Deposits</div><div class="sc-value">$23,984.88</div></div>
+      <div class="stat-cell"><div class="sc-label">Total Earnings</div><div class="sc-value green" id="bd-earnings">—</div></div>
+      <div class="stat-cell"><div class="sc-label">Realized Earnings</div><div class="sc-value green">$2,172.42</div></div>
+      <div class="stat-cell"><div class="sc-label">Unrealized P&L</div><div class="sc-value" id="bd-unrealized">—</div></div>
+      <div class="stat-cell"><div class="sc-label">Total Return</div><div class="sc-value" id="bd-return">—</div></div>
+      <div class="stat-cell"><div class="sc-label">Today's Change</div><div class="sc-value" id="bd-today">—</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="advisor-card">
+  <div class="advisor-icon">💼</div>
+  <div>
+    <p class="advisor-label">Advisor Insight</p>
+    <p class="advisor-text">This portfolio reflects a thoughtful, growth-oriented tilt with meaningful exposure to secular tailwinds in semiconductor and AI infrastructure — TSM, MU, and ASML collectively form a compelling "picks-and-shovels" bet on the ongoing chip supercycle. MSFT further reinforces the AI theme with a more defensive quality moat, while LLY provides excellent diversification into healthcare via one of the most compelling drug pipelines in a generation. The energy sleeve (XOM + BP) adds inflation sensitivity and solid dividend income, though BP's recent underperformance and the broader energy transition headwinds deserve watching. Notably, cash represents a substantial portion of the total account balance — while this provides optionality and a cushion against volatility, it is a meaningful drag on long-term returns in an inflationary environment, and deploying even half of it into a broad index fund or defensive dividend payer would materially improve capital efficiency. The single greatest risk remains concentration: over 44% of invested assets sit in technology, making the portfolio highly sensitive to a valuation reset in semis or a slowdown in AI capital expenditure — both realistic near-term scenarios that warrant a trim of TSM given elevated Taiwan geopolitical risk.</p>
+  </div>
+</div>
+
+<script>
+const API_KEY = 'd84kp4hr01qutij98mugd84kp4hr01qutij98mv0';
+const CASH_VAL = 8471.83;
+const NET_DEPOSITS = 23984.88;
+const REALIZED = 2172.42;
+
+// Cost basis per share (derived from original screenshots: value / shares at original price)
+const stocks = [
+  { ticker:'JPM',  name:'JPMorgan',    shares:13, costBasis:297.81,  color:'#a8dfc9', sector:'Financial'  },
+  { ticker:'LLY',  name:'Eli Lilly',   shares:3,  costBasis:1004.92, color:'#f5b8c4', sector:'Healthcare' },
+  { ticker:'TSM',  name:'Taiwan Semi', shares:7,  costBasis:404.35,  color:'#b5cff5', sector:'Technology' },
+  { ticker:'MSFT', name:'Microsoft',   shares:5,  costBasis:421.92,  color:'#e0f0e8', sector:'Technology' },
+  { ticker:'XOM',  name:'ExxonMobil',  shares:10, costBasis:157.92,  color:'#fde5a0', sector:'Energy'     },
+  { ticker:'ASML', name:'ASML',        shares:1,  costBasis:1501.81, color:'#c8d8f0', sector:'Technology' },
+  { ticker:'MU',   name:'Micron',      shares:2,  costBasis:724.66,  color:'#d4c4f0', sector:'Technology' },
+  { ticker:'BP',   name:'BP',          shares:30, costBasis:44.35,   color:'#d4edcc', sector:'Energy'     },
+];
+
+const LOGOS = {
+  JPM:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#003087"/><text x="20" y="26" text-anchor="middle" font-size="13" font-weight="700" fill="white" font-family="Arial,sans-serif">JPM</text></svg>`,
+  LLY:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#D52B1E"/><text x="20" y="27" text-anchor="middle" font-size="14" font-weight="700" fill="white" font-family="Georgia,serif" font-style="italic">Lilly</text></svg>`,
+  TSM:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#003087"/><text x="20" y="24" text-anchor="middle" font-size="10" font-weight="700" fill="white" font-family="Arial,sans-serif">TSMC</text><rect x="8" y="27" width="24" height="3" rx="1.5" fill="#e8a020"/></svg>`,
+  MSFT:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#f3f3f3"/><rect x="8" y="8" width="11" height="11" fill="#F25022"/><rect x="21" y="8" width="11" height="11" fill="#7FBA00"/><rect x="8" y="21" width="11" height="11" fill="#00A4EF"/><rect x="21" y="21" width="11" height="11" fill="#FFB900"/></svg>`,
+  XOM:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#D01010"/><text x="20" y="24" text-anchor="middle" font-size="9.5" font-weight="800" fill="white" font-family="Arial,sans-serif" letter-spacing="0.5">EXXON</text><text x="20" y="34" text-anchor="middle" font-size="8" font-weight="600" fill="#ffcccc" font-family="Arial,sans-serif" letter-spacing="1">MOBIL</text></svg>`,
+  ASML:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#0A2240"/><text x="20" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="Arial,sans-serif" letter-spacing="1">ASML</text></svg>`,
+  MU:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#2B2B2B"/><polygon points="20,8 32,28 8,28" fill="none" stroke="#00B3E6" stroke-width="2.5"/><text x="20" y="38" text-anchor="middle" font-size="8" font-weight="700" fill="#00B3E6" font-family="Arial,sans-serif">MICRON</text></svg>`,
+  BP:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#ffffff" stroke="#e0e0e0" stroke-width="1"/><circle cx="20" cy="20" r="13" fill="#009900"/><circle cx="20" cy="20" r="8" fill="#FFD700"/><text x="20" y="24" text-anchor="middle" font-size="9" font-weight="800" fill="#009900" font-family="Arial,sans-serif">bp</text></svg>`,
+  CASH:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#e8f5e9"/><text x="20" y="27" text-anchor="middle" font-size="20" font-weight="700" fill="#2e7d52" font-family="Georgia,serif">$</text></svg>`
+};
+
+function svgURI(s){ return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s); }
+function fmt(n,dec=2){ return n.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function fmtK(n){ return n>=1000?'$'+(n/1000).toFixed(1)+'k':'$'+fmt(n); }
+
+// ── Fetch live quotes from Finnhub ─────────────────────────────────
+async function fetchPrices() {
+  setStatus('loading','Fetching live prices…');
+  const tickers = stocks.map(s=>s.ticker);
+  const results = {};
+
+  try {
+    await Promise.all(tickers.map(async ticker => {
+      const res = await fetch(
+        `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${API_KEY}`
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      // c = current price, pc = previous close, d = change, dp = change %
+      results[ticker] = { price: data.c, prevClose: data.pc, change: data.d, changePct: data.dp };
+    }));
+
+    renderDashboard(results);
+    const now = new Date();
+    setStatus('live', `Live · updated ${now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`);
+  } catch(e) {
+    setStatus('error', `Could not fetch prices — showing last known data (${e.message})`);
+    // Fall back to cost basis prices
+    const fallback = {};
+    stocks.forEach(s => { fallback[s.ticker] = { price: s.costBasis, prevClose: s.costBasis, change: 0, changePct: 0 }; });
+    renderDashboard(fallback);
+  }
+}
+
+function setStatus(type, msg) {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'status-dot ' + type;
+  txt.textContent = msg;
+}
+
+// ── Render everything with live data ──────────────────────────────
+function renderDashboard(prices) {
+  // Enrich stocks with live data
+  const live = stocks.map(s => {
+    const q = prices[s.ticker] || { price: s.costBasis, prevClose: s.costBasis, change: 0, changePct: 0 };
+    const livePrice  = q.price;
+    const liveValue  = livePrice * s.shares;
+    const costValue  = s.costBasis * s.shares;
+    const totalGain  = liveValue - costValue;
+    const dayChange  = (q.change || 0) * s.shares;
+    return { ...s, livePrice, liveValue, costValue, totalGain, dayChange, changePct: q.changePct || 0 };
+  });
+
+  const marketValue  = live.reduce((sum, s) => sum + s.liveValue, 0);
+  const totalAccount = marketValue + CASH_VAL;
+  const unrealized   = live.reduce((sum, s) => sum + s.totalGain, 0);
+  const totalEarnings = REALIZED + unrealized;
+  const totalReturn  = ((totalEarnings / NET_DEPOSITS) * 100);
+  const todayPL      = live.reduce((sum, s) => sum + s.dayChange, 0);
+
+  // ── Header pills ────────────────────────────────────────────────
+  document.getElementById('pill-total').textContent  = '$' + fmt(totalAccount);
+  document.getElementById('pill-market').textContent = '$' + fmt(marketValue);
+
+  const retEl = document.getElementById('pill-return');
+  retEl.textContent = (totalReturn >= 0 ? '+' : '') + totalReturn.toFixed(2) + '%';
+  retEl.className = 'sp-value ' + (totalReturn >= 0 ? 'green' : 'red');
+
+  const todEl = document.getElementById('pill-today');
+  todEl.textContent = (todayPL >= 0 ? '+$' : '-$') + fmt(Math.abs(todayPL));
+  todEl.className = 'sp-value ' + (todayPL >= 0 ? 'green' : 'red');
+
+  // ── Account breakdown ───────────────────────────────────────────
+  const earnEl = document.getElementById('bd-earnings');
+  earnEl.textContent = (totalEarnings >= 0 ? '+$' : '-$') + fmt(Math.abs(totalEarnings));
+  earnEl.className = 'sc-value ' + (totalEarnings >= 0 ? 'green' : 'red');
+
+  const unrEl = document.getElementById('bd-unrealized');
+  unrEl.textContent = (unrealized >= 0 ? '+$' : '-$') + fmt(Math.abs(unrealized));
+  unrEl.className = 'sc-value ' + (unrealized >= 0 ? 'green' : 'red');
+
+  const retEl2 = document.getElementById('bd-return');
+  retEl2.textContent = (totalReturn >= 0 ? '+' : '') + totalReturn.toFixed(2) + '%';
+  retEl2.className = 'sc-value ' + (totalReturn >= 0 ? 'green' : 'red');
+
+  const todEl2 = document.getElementById('bd-today');
+  todEl2.textContent = (todayPL >= 0 ? '+$' : '-$') + fmt(Math.abs(todayPL));
+  todEl2.className = 'sc-value ' + (todayPL >= 0 ? 'green' : 'red');
+
+  // ── Holdings list ────────────────────────────────────────────────
+  const hList = document.getElementById('holdingsList');
+  hList.innerHTML = '';
+
+  // Cash row
+  const cashEl = document.createElement('div');
+  cashEl.className = 'holding';
+  cashEl.innerHTML = `
+    <div class="holding-left">
+      <div class="h-icon">${LOGOS.CASH}</div>
+      <div><div class="h-ticker">CASH</div><div class="h-meta">Available balance</div></div>
+    </div>
+    <div class="holding-right">
+      <div class="h-value">$${fmt(CASH_VAL)}</div>
+      <div class="h-gain gain-pos">${(CASH_VAL/totalAccount*100).toFixed(1)}% of portfolio</div>
+    </div>`;
+  hList.appendChild(cashEl);
+
+  live.forEach(s => {
+    const pos = s.totalGain >= 0;
+    const dayPos = s.dayChange >= 0;
+    const el = document.createElement('div');
+    el.className = 'holding';
+    el.innerHTML = `
+      <div class="holding-left">
+        <div class="h-icon" style="background:${s.color}">${LOGOS[s.ticker]}</div>
+        <div>
+          <div class="h-ticker">${s.ticker}</div>
+          <div class="h-meta">${s.shares} share${s.shares>1?'s':''}</div>
+        </div>
+      </div>
+      <div class="holding-right">
+        <div class="h-value">$${fmt(s.liveValue)}</div>
+        <div class="h-price">$${fmt(s.livePrice)} · <span class="${dayPos?'gain-pos':'gain-neg'}">${dayPos?'+':''}${fmt(s.changePct,2)}% today</span></div>
+        <div class="h-gain ${pos?'gain-pos':'gain-neg'}">${pos?'+':'-'}$${fmt(Math.abs(s.totalGain))} total</div>
+      </div>`;
+    hList.appendChild(el);
+  });
+
+  // ── Sector bars ──────────────────────────────────────────────────
+  const sectorMap = {};
+  live.forEach(s => {
+    sectorMap[s.sector] = (sectorMap[s.sector] || 0) + s.liveValue;
+  });
+  sectorMap['Cash'] = CASH_VAL;
+
+  const sectorColors = { Technology:'#b5cff5', Financial:'#a8dfc9', Healthcare:'#f5b8c4', Energy:'#fde5a0', Cash:'#c8e6c9' };
+  const sList = document.getElementById('sectorList');
+  sList.innerHTML = '';
+  Object.entries(sectorMap)
+    .sort((a,b) => b[1]-a[1])
+    .forEach(([name, val]) => {
+      const pct = (val / totalAccount * 100).toFixed(1);
+      const el = document.createElement('div');
+      el.className = 'sector-item';
+      el.innerHTML = `
+        <div class="sector-header">
+          <span class="sector-name">${name}</span>
+          <span class="sector-pct">${pct}%</span>
+        </div>
+        <div class="sector-bar-bg">
+          <div class="sector-bar-fill" style="width:${pct}%;background:${sectorColors[name]||'#ddd'};"></div>
+        </div>`;
+      sList.appendChild(el);
+    });
+
+  // ── Donut ────────────────────────────────────────────────────────
+  renderDonut(live, totalAccount);
+}
+
+// ── SVG Donut ──────────────────────────────────────────────────────
+function renderDonut(live, totalAccount) {
+  const svg = document.getElementById('donutSvg');
+  svg.innerHTML = '';
+
+  const CX=200, CY=200, R_OUT=150, R_IN=92;
+  const allSlices = [
+    ...live.map(s => ({ ticker:s.ticker, value:s.liveValue, color:s.color })),
+    { ticker:'CASH', value:CASH_VAL, color:'#c8e6c9' }
+  ];
+  const grandTotal = allSlices.reduce((s,x)=>s+x.value,0);
+
+  function toRad(deg){ return (deg-90)*Math.PI/180; }
+  function pt(r,deg){ return [CX+r*Math.cos(toRad(deg)), CY+r*Math.sin(toRad(deg))]; }
+  function arcD(r1,r2,a1,a2){
+    if(a2-a1>=359.9) a2=a1+359.89;
+    const lg=(a2-a1)>180?1:0;
+    const [x1,y1]=pt(r1,a1),[x2,y2]=pt(r1,a2);
+    const [x3,y3]=pt(r2,a2),[x4,y4]=pt(r2,a1);
+    return `M${x1},${y1} A${r1},${r1},0,${lg},1,${x2},${y2} L${x3},${y3} A${r2},${r2},0,${lg},0,${x4},${y4}Z`;
+  }
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  svg.appendChild(defs);
+
+  let ang=0;
+  const mids=[];
+  allSlices.forEach((s,i)=>{
+    const sweep=(s.value/grandTotal)*360;
+    const end=ang+sweep;
+    mids.push({mid:ang+sweep/2, sweep});
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',arcD(R_OUT,R_IN,ang,end));
+    path.setAttribute('fill',s.color);
+    path.setAttribute('stroke','#fafaf8');
+    path.setAttribute('stroke-width','2');
+    path.setAttribute('data-i',i);
+    path.style.cursor='pointer';
+    path.style.transition='opacity .18s';
+    path.addEventListener('mouseenter',()=>{
+      svg.querySelectorAll('path[data-i]').forEach(p=>p.style.opacity='0.28');
+      path.style.opacity='1';
+    });
+    path.addEventListener('mouseleave',()=>{
+      svg.querySelectorAll('path[data-i]').forEach(p=>p.style.opacity='1');
+    });
+    svg.appendChild(path);
+    ang=end;
+  });
+
+  // Center
+  function mkT(x,y,txt,size,weight,fill,fam){
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',x); t.setAttribute('y',y); t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-size',size); t.setAttribute('font-weight',weight);
+    t.setAttribute('fill',fill); t.setAttribute('font-family',fam||'DM Sans,sans-serif');
+    t.textContent=txt; return t;
+  }
+  svg.appendChild(mkT(CX,CY-10,'TOTAL',10,'400','#8e8e9a'));
+  svg.appendChild(mkT(CX,CY+16,fmtK(grandTotal),22,'600','#1a1a2e','Playfair Display,serif'));
+
+  // Leader lines + badges
+  const ELBOW_R=205, ARM=40, B=34;
+  allSlices.forEach((s,i)=>{
+    const {mid,sweep}=mids[i];
+    if(sweep<3) return;
+    const [px,py]=pt(R_OUT+4,mid);
+    const [ex,ey]=pt(ELBOW_R,mid);
+    const right=ex>=CX;
+    const ax=right?ex+ARM:ex-ARM;
+
+    const poly=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    poly.setAttribute('points',`${px},${py} ${ex},${ey} ${ax},${ey}`);
+    poly.setAttribute('fill','none');
+    poly.setAttribute('stroke',s.color);
+    poly.setAttribute('stroke-width','1.8');
+    poly.setAttribute('stroke-linecap','round');
+    poly.setAttribute('stroke-linejoin','round');
+    poly.setAttribute('opacity','0.9');
+    svg.appendChild(poly);
+
+    const bx=right?ax+3:ax-B-3;
+    const by=ey-B/2;
+
+    const shadow=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    shadow.setAttribute('x',bx-1); shadow.setAttribute('y',by-1);
+    shadow.setAttribute('width',B+2); shadow.setAttribute('height',B+2);
+    shadow.setAttribute('rx','9'); shadow.setAttribute('fill','white');
+    shadow.setAttribute('filter','drop-shadow(0 1px 3px rgba(0,0,0,0.12))');
+    svg.appendChild(shadow);
+
+    const imgEl=document.createElementNS('http://www.w3.org/2000/svg','image');
+    imgEl.setAttribute('href', svgURI(LOGOS[s.ticker]));
+    imgEl.setAttribute('x',bx); imgEl.setAttribute('y',by);
+    imgEl.setAttribute('width',B); imgEl.setAttribute('height',B);
+    svg.appendChild(imgEl);
+
+    const pct=(s.value/grandTotal*100).toFixed(1);
+    const tx=right?bx+B+5:bx-5;
+    const anchor=right?'start':'end';
+
+    const t1=mkT(tx,ey-3,s.ticker,11,'500','#1a1a2e');
+    t1.setAttribute('text-anchor',anchor); svg.appendChild(t1);
+    const t2=mkT(tx,ey+11,pct+'%',10,'400','#8e8e9a');
+    t2.setAttribute('text-anchor',anchor); svg.appendChild(t2);
+  });
+}
+
+// ── Boot ──────────────────────────────────────────────────────────
+fetchPrices();
+</script>
+</body>
+</html>
