@@ -92,7 +92,7 @@
   <div class="header-stats">
     <div class="stat-pill"><span class="sp-label">Account Balance</span><span class="sp-value" id="pill-total">—</span></div>
     <div class="stat-pill"><span class="sp-label">Market Value</span><span class="sp-value" id="pill-market">—</span></div>
-    <div class="stat-pill"><span class="sp-label">Cash Balance</span><span class="sp-value blue">$8,471.83</span></div>
+    <div class="stat-pill"><span class="sp-label">Cash Balance</span><span class="sp-value blue" id="pill-cash">—</span></div>
     <div class="stat-pill"><span class="sp-label">Total Return</span><span class="sp-value" id="pill-return">—</span></div>
     <div class="stat-pill"><span class="sp-label">Today's P&L</span><span class="sp-value" id="pill-today">—</span></div>
   </div>
@@ -229,6 +229,7 @@ function renderDashboard(prices) {
   // ── Header pills ────────────────────────────────────────────────
   document.getElementById('pill-total').textContent  = '$' + fmt(totalAccount);
   document.getElementById('pill-market').textContent = '$' + fmt(marketValue);
+  document.getElementById('pill-cash').textContent   = '$' + fmt(CASH_VAL);
 
   const retEl = document.getElementById('pill-return');
   retEl.textContent = (totalReturn >= 0 ? '+' : '') + totalReturn.toFixed(2) + '%';
