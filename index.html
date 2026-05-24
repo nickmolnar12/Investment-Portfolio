@@ -49,6 +49,10 @@
   .h-icon svg { width:34px; height:34px; }
   .h-ticker { font-size:13px; font-weight:500; }
   .h-meta { font-size:11px; color:var(--muted); margin-top:1px; }
+  .h-mid { display:flex; flex-direction:column; align-items:center; padding:0 10px; border-left:1px solid var(--border); border-right:1px solid var(--border); min-width:72px; }
+  .h-mid-label { font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+  .h-mid-avg { font-size:12px; font-weight:500; }
+  .h-mid-shares { font-size:10px; color:var(--muted); margin-top:2px; }
   .holding-right { text-align:right; }
   .h-value { font-size:13px; font-weight:500; }
   .h-gain { font-size:11px; margin-top:2px; }
@@ -114,7 +118,7 @@
     <div class="stats-grid">
       <div class="stat-cell"><div class="sc-label">Net Deposits</div><div class="sc-value">$23,984.88</div></div>
       <div class="stat-cell"><div class="sc-label">Total Earnings</div><div class="sc-value green" id="bd-earnings">—</div></div>
-      <div class="stat-cell"><div class="sc-label">Realized Earnings</div><div class="sc-value green">$2,172.42</div></div>
+      <div class="stat-cell"><div class="sc-label">Realized Earnings</div><div class="sc-value green">$1,827.13</div></div>
       <div class="stat-cell"><div class="sc-label">Unrealized P&L</div><div class="sc-value" id="bd-unrealized">—</div></div>
       <div class="stat-cell"><div class="sc-label">Total Return</div><div class="sc-value" id="bd-return">—</div></div>
       <div class="stat-cell"><div class="sc-label">Today's Change</div><div class="sc-value" id="bd-today">—</div></div>
@@ -132,20 +136,21 @@
 
 <script>
 const API_KEY = 'd84kp4hr01qutij98mugd84kp4hr01qutij98mv0';
-const CASH_VAL = 8471.83;
+const CASH_VAL = 815.35;
 const NET_DEPOSITS = 23984.88;
-const REALIZED = 2172.42;
+const REALIZED = 1827.13;
 
-// Cost basis per share (derived from original screenshots: value / shares at original price)
+// Cost basis per share (updated from screenshots May 2026)
 const stocks = [
-  { ticker:'JPM',  name:'JPMorgan',    shares:13, costBasis:297.81,  color:'#a8dfc9', sector:'Financial'  },
-  { ticker:'LLY',  name:'Eli Lilly',   shares:3,  costBasis:1004.92, color:'#f5b8c4', sector:'Healthcare' },
-  { ticker:'TSM',  name:'Taiwan Semi', shares:7,  costBasis:404.35,  color:'#b5cff5', sector:'Technology' },
-  { ticker:'MSFT', name:'Microsoft',   shares:5,  costBasis:421.92,  color:'#e0f0e8', sector:'Technology' },
-  { ticker:'XOM',  name:'ExxonMobil',  shares:10, costBasis:157.92,  color:'#fde5a0', sector:'Energy'     },
-  { ticker:'ASML', name:'ASML',        shares:1,  costBasis:1501.81, color:'#c8d8f0', sector:'Technology' },
-  { ticker:'MU',   name:'Micron',      shares:2,  costBasis:724.66,  color:'#d4c4f0', sector:'Technology' },
-  { ticker:'BP',   name:'BP',          shares:30, costBasis:44.35,   color:'#d4edcc', sector:'Energy'     },
+  { ticker:'VOO',  name:'Vanguard S&P 500', shares:9,  costBasis:685.55,  color:'#b0d4e8', sector:'Multi Sector' },
+  { ticker:'JPM',  name:'JPMorgan',         shares:13, costBasis:306.38,  color:'#a8dfc9', sector:'Financial'    },
+  { ticker:'LLY',  name:'Eli Lilly',        shares:3,  costBasis:1065.00, color:'#f5b8c4', sector:'Healthcare'   },
+  { ticker:'TSM',  name:'Taiwan Semi',      shares:10, costBasis:404.52,  color:'#b5cff5', sector:'Technology'   },
+  { ticker:'MSFT', name:'Microsoft',        shares:5,  costBasis:418.57,  color:'#e0f0e8', sector:'Technology'   },
+  { ticker:'XOM',  name:'ExxonMobil',       shares:10, costBasis:154.92,  color:'#fde5a0', sector:'Energy'       },
+  { ticker:'ASML', name:'ASML',             shares:1,  costBasis:1632.90, color:'#c8d8f0', sector:'Technology'   },
+  { ticker:'MU',   name:'Micron',           shares:2,  costBasis:751.00,  color:'#d4c4f0', sector:'Technology'   },
+  { ticker:'BP',   name:'BP',               shares:30, costBasis:44.36,   color:'#d4edcc', sector:'Energy'       },
 ];
 
 const LOGOS = {
@@ -157,6 +162,7 @@ const LOGOS = {
   ASML:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#0A2240"/><text x="20" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="Arial,sans-serif" letter-spacing="1">ASML</text></svg>`,
   MU:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#2B2B2B"/><polygon points="20,8 32,28 8,28" fill="none" stroke="#00B3E6" stroke-width="2.5"/><text x="20" y="38" text-anchor="middle" font-size="8" font-weight="700" fill="#00B3E6" font-family="Arial,sans-serif">MICRON</text></svg>`,
   BP:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#ffffff" stroke="#e0e0e0" stroke-width="1"/><circle cx="20" cy="20" r="13" fill="#009900"/><circle cx="20" cy="20" r="8" fill="#FFD700"/><text x="20" y="24" text-anchor="middle" font-size="9" font-weight="800" fill="#009900" font-family="Arial,sans-serif">bp</text></svg>`,
+  VOO:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#cc0000"/><text x="20" y="22" text-anchor="middle" font-size="11" font-weight="800" fill="white" font-family="Arial,sans-serif">Van</text><text x="20" y="34" text-anchor="middle" font-size="8" font-weight="600" fill="#ffaaaa" font-family="Arial,sans-serif">guard</text></svg>`,
   CASH:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#e8f5e9"/><text x="20" y="27" text-anchor="middle" font-size="20" font-weight="700" fill="#2e7d52" font-family="Georgia,serif">$</text></svg>`
 };
 
@@ -261,6 +267,11 @@ function renderDashboard(prices) {
       <div class="h-icon">${LOGOS.CASH}</div>
       <div><div class="h-ticker">CASH</div><div class="h-meta">Available balance</div></div>
     </div>
+    <div class="h-mid">
+      <div class="h-mid-label">Avg Price</div>
+      <div class="h-mid-avg">—</div>
+      <div class="h-mid-shares">—</div>
+    </div>
     <div class="holding-right">
       <div class="h-value">$${fmt(CASH_VAL)}</div>
       <div class="h-gain gain-pos">${(CASH_VAL/totalAccount*100).toFixed(1)}% of portfolio</div>
@@ -277,8 +288,13 @@ function renderDashboard(prices) {
         <div class="h-icon" style="background:${s.color}">${LOGOS[s.ticker]}</div>
         <div>
           <div class="h-ticker">${s.ticker}</div>
-          <div class="h-meta">${s.shares} share${s.shares>1?'s':''}</div>
+          <div class="h-meta">${s.name}</div>
         </div>
+      </div>
+      <div class="h-mid">
+        <div class="h-mid-label">Avg Price</div>
+        <div class="h-mid-avg">$${fmt(s.costBasis)}</div>
+        <div class="h-mid-shares">${s.shares} share${s.shares>1?'s':''}</div>
       </div>
       <div class="holding-right">
         <div class="h-value">$${fmt(s.liveValue)}</div>
@@ -295,7 +311,7 @@ function renderDashboard(prices) {
   });
   sectorMap['Cash'] = CASH_VAL;
 
-  const sectorColors = { Technology:'#b5cff5', Financial:'#a8dfc9', Healthcare:'#f5b8c4', Energy:'#fde5a0', Cash:'#c8e6c9' };
+  const sectorColors = { Technology:'#b5cff5', Financial:'#a8dfc9', Healthcare:'#f5b8c4', Energy:'#fde5a0', 'Multi Sector':'#b0d4e8', Cash:'#c8e6c9' };
   const sList = document.getElementById('sectorList');
   sList.innerHTML = '';
   Object.entries(sectorMap)
