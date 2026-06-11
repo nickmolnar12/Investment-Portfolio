@@ -298,7 +298,7 @@ function renderDashboard(prices) {
       </div>
       <div class="holding-right">
         <div class="h-value">$${fmt(s.liveValue)}</div>
-        <div class="h-price">$${fmt(s.livePrice)} · <span class="${dayPos?'gain-pos':'gain-neg'}">${dayPos?'+':''}${fmt(s.changePct,2)}% today</span></div>
+        <div class="h-price">$${fmt(s.livePrice)} · <span class="${dayPos?'gain-pos':'gain-neg'}">${dayPos?'+':''}${fmt(s.changePct,2)}% 1D</span></div>
         <div class="h-gain ${pos?'gain-pos':'gain-neg'}">${pos?'+':'-'}$${fmt(Math.abs(s.totalGain))} total</div>
       </div>`;
     hList.appendChild(el);
