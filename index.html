@@ -136,16 +136,16 @@
 
 <script>
 const API_KEY = 'd84kp4hr01qutij98mugd84kp4hr01qutij98mv0';
-const CASH_VAL = 4315.39;
+const CASH_VAL = 3595.96;
 const NET_DEPOSITS = 26700.57;
-const REALIZED = 1209.13;
+const REALIZED = 579.76;
 
 // Cost basis per share (updated from screenshots May 2026)
 const stocks = [
-  { ticker:'VOO',  name:'S&P 500', shares:9,  costBasis:679.72,  color:'#b0d4e8', sector:'Multi Sector' },
+  { ticker:'VOO',  name:'S&P 500', shares:11,  costBasis:678.84,  color:'#b0d4e8', sector:'Multi Sector' },
   { ticker:'JPM',  name:'JPMorgan',         shares:13, costBasis:310.45,  color:'#a8dfc9', sector:'Financial'    },
   { ticker:'LLY',  name:'Eli Lilly',        shares:3,  costBasis:986.82, color:'#f5b8c4', sector:'Healthcare'   },
-  { ticker:'TSM',  name:'Taiwan Semi',      shares:10, costBasis:414.41,  color:'#b5cff5', sector:'Technology'   },
+  { ticker:'TSM',  name:'Taiwan Semi',      shares:7, costBasis:412.06,  color:'#b5cff5', sector:'Technology'   },
   { ticker:'MSFT', name:'Microsoft',        shares:5,  costBasis:413.29,  color:'#e0f0e8', sector:'Technology'   },
   { ticker:'XOM',  name:'ExxonMobil',       shares:10, costBasis:155.12,  color:'#fde5a0', sector:'Energy'       },
   { ticker:'ASML', name:'ASML',             shares:1,  costBasis:1443.86, color:'#c8d8f0', sector:'Technology'   },
@@ -265,7 +265,7 @@ function renderDashboard(prices) {
   cashEl.innerHTML = `
     <div class="holding-left">
       <div class="h-icon">${LOGOS.CASH}</div>
-      <div><div class="h-ticker">CASH</div><div class="h-meta">Balance</div></div>
+      <div><div class="h-ticker">CASH</div><div class="h-meta">Bltialance</div></div>
     </div>
     <div class="h-mid">
       <div class="h-mid-label">Avg Price</div>
